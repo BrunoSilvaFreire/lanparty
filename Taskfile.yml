@@ -1,0 +1,45 @@
+version: '3'
+
+vars:
+  CS2_WP_REPO: https://github.com/Nereziel/cs2-WeaponPaints
+  CS2_WP_DIR: ./cs2-WeaponPaints
+  CSSHARP_SOURCE: https://github.com/roflmuffin/CounterStrikeSharp/releases/download/v167/counterstrikesharp-with-runtime-build-167-linux-607e6c6.zip
+  WORKING_DIR: tmp
+  CS_INSTALL_PATH: volumes/steam_auth/steamapps/common/Counter-Strike\ Global\ Offensive
+  SKINS_SOURCE: https://github.com/Nereziel/cs2-WeaponPaints/releases/download/build-188/WeaponPaints.zip
+tasks:
+  setup-steamcmd:
+    cmds:
+      - docker compose up steamcmd
+    desc: "Set up the SteamCMD service."
+
+  setup-counterstrike:
+    cmds:
+      - docker compose up counterstrike
+    desc: "Set up the Counterstrike service after SteamCMD is ready."
+
+  install-mods:
+    cmds:
+      - mkdir -p {{ .WORKING_DIR }}
+      - test -f {{ .WORKING_DIR }}/cssharp.zip || wget {{ .CSSHARP_SOURCE }} -O {{ .WORKING_DIR }}/cssharp.zip
+      - echo "A" | unzip {{ .WORKING_DIR }}/cssharp.zip -d {{ .WORKING_DIR }}/cssharp
+      - cp -rf {{ .WORKING_DIR }}/cssharp/. {{ .CS_INSTALL_PATH }}
+      - test -f {{ .WORKING_DIR }}/skins.zip || wget {{ .SKINS_SOURCE }} -O {{ .WORKING_DIR }}/skins.zip
+      - echo "A" | unzip {{ .WORKING_DIR }}/skins.zip -d {{ .WORKING_DIR }}/skins
+      - cp -rf {{ .WORKING_DIR }}/skins/WeaponPaints {{ .CS_INSTALL_PATH }}/addons/counterstrikesharp/plugins
+    desc: "Clone CS2 Weapon Paints repository if it doesn't already exist."
+
+  setup-all:
+    deps: [setup-steamcmd, install-cs2-wp, setup-counterstrike]
+    desc: "Complete setup for the LAN party, including SteamCMD, Counterstrike, and CS2 Weapon Paints."
+  
+  pewpewpew:
+    cmds:
+      - docker compose up -d counterstrike
+    desc: "Set up the Counterstrike service after SteamCMD is ready."
+
+  clean:
+    cmds:
+      - docker compose down -v
+    desc: "Clean up all services and volumes."
+
